@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitoring</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        /* General Styles */
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Container Styling */
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ffcc;
+            text-shadow: 2px 2px 10px rgba(0, 255, 204, 0.7);
+        }
+
+        /* Card Style */
+        .card {
+            background: #1e1e1e;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px auto;
+            width: 80%;
+            box-shadow: 0px 0px 15px rgba(0, 255, 204, 0.3);
+        }
+
+        /* Alert Box */
+        .alert {
+            background: linear-gradient(45deg, #ff4e50, #ff9a8b);
+            color: white;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 78, 80, 0.6);
+        }
+
+        /* Gauge Styling */
+        .gauge-container {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>System Monitoring Dashboard</h1>
+
+        <div class="card">
+            <h2>CPU Utilization</h2>
+            <div id="cpu-gauge" class="gauge-container"></div>
+        </div>
+
+        <div class="card">
+            <h2>Memory Utilization</h2>
+            <div id="mem-gauge" class="gauge-container"></div>
+        </div>
+
+        <div id="alert-message"></div>
+    </div>
+
+    <script>
+        var socket = io();
+
+        function updateGauge(cpu, mem, message) {
+            var cpuGauge = {
+                type: "indicator",
+                mode: "gauge+number",
+                value: cpu,
+                gauge: {
+                    axis: { range: [null, 100] },
+                    bar: { color: "#00ffcc" },
+                    bgcolor: "#1e1e1e",
+                    borderwidth: 2,
+                    bordercolor: "#00ffcc",
+                    steps: [
+                        { range: [0, 50], color: "#28a745" },
+                        { range: [50, 85], color: "#ffcc00" },
+                        { range: [85, 100], color: "#ff3b3b" }
+                    ],
+                    threshold: {
+                        line: { color: "red", width: 4 },
+                        thickness: 0.75,
+                        value: cpu
+                    }
+                }
+            };
+
+            var memGauge = {
+                type: "indicator",
+                mode: "gauge+number",
+                value: mem,
+                gauge: {
+                    axis: { range: [null, 100] },
+                    bar: { color: "#00ffcc" },
+                    bgcolor: "#1e1e1e",
+                    borderwidth: 2,
+                    bordercolor: "#00ffcc",
+                    steps: [
+                        { range: [0, 50], color: "#28a745" },
+                        { range: [50, 85], color: "#ffcc00" },
+                        { range: [85, 100], color: "#ff3b3b" }
+                    ],
+                    threshold: {
+                        line: { color: "red", width: 4 },
+                        thickness: 0.75,
+                        value: mem
+                    }
+                }
+            };
+
+            var layout = { paper_bgcolor: "#121212", font: { color: "#ffffff" } };
+
+            Plotly.newPlot('cpu-gauge', [cpuGauge], layout);
+            Plotly.newPlot('mem-gauge', [memGauge], layout);
+
+            if (message) {
+                document.getElementById("alert-message").innerHTML = `<div class="alert">${message}</div>`;
+            } else {
+                document.getElementById("alert-message").innerHTML = "";
+            }
+        }
+
+        socket.on("update_metrics", function(data) {
+            updateGauge(data.cpu_metric, data.mem_metric, data.message);
+        });
+    </script>
+
+</body>
+</html>
